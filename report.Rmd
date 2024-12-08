@@ -1,1 +1,35 @@
+---
+title: "Analiza glazbenih preferencija i njihovog utjecaja na mentalno zdravlje"
+author: "Ena Dvojak, Patrik Blašković, Mislav Hlupić, Eugen Vucelić"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath("."))
+```
+
+## Uvod
+
+Muzikoterapija je terapijski pristup koji koristi glazbu i njezine elemente za smanjenje stresa, poboljšanje raspoloženja i jačanje mentalnog zdravlja. U tom se procesu koriste različiti glazbeni žanrovi prema preferencijama pojedinca, a glazba služi kao katalizator pozitivnih emocionalnih reakcija.
+
+## Case study: *Muzikoterapija i slušačke navike*
+
+U analizu je uključen skup podataka sa 736 odgovora na anketu koja istražuje slušačke navike, preferirane glazbene žanrove, samoprocijenjeno mentalno zdravlje i druge relevantne čimbenike (dob, odabir streaming servisa, učestalost slušanja određenih žanrova, instrumentalne i skladateljske vještine). Cilj ovog projekta je razumjeti obrasce i povezanosti u podacima te ih statistički interpretirati kako bi se dobio uvid u ulogu glazbe u poticanju pozitivnog mentalnog stanja.
+
+```{r load-libraries, message=FALSE, warning=FALSE}
+library(tidyverse) 
+library(modeest) 
+library(dplyr)
+```
+
+```{r source-scripts}
+source("R/composer_comparison.R")
+```
+
+```{r load-data}
+music_data <- read_csv("data/processed/dataset_reduced.csv", show_col_types = FALSE)
+
+head(music_data)
+```
