@@ -1,6 +1,6 @@
 # Analiza Glazbenih Preferencija i Mentalnog Zdravlja
 
-Projekt iz kolegija Statistička obrada podataka koji istražuje vezu između glazbenih navika i mentalnog zdravlja.
+Projekt iz kolegija Statistička analiza podataka koji istražuje vezu između glazbenih navika i mentalnog zdravlja.
 
 Članovi tima: Ena Dvojak, Patrik Blašković, Mislav Hlupić, Eugen Vucelić
 
