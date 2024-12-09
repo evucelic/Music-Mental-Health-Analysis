@@ -25,11 +25,28 @@ library(dplyr)
 ```
 
 ```{r source-scripts}
-source("R/composer_comparison.R")
+#TODO: dodati skripte
 ```
 
 ```{r load-data}
 music_data <- read_csv("data/processed/dataset_reduced.csv", show_col_types = FALSE)
 
 head(music_data)
+```
+
+## Deskriptivna statistika
+
+Mjere centralne tendencije za varijable "Age" i "Hours per day" grupirane po primarnom streaming servisu, izostavljen je mod zato što nije dobra mjera centralne tendencije za ovaj dataset. Najveća frekvencija sati slušanja i godina ispitanika nije nužno najbolji pokazatelj sredine podataka, pogtovo za streaming servise s manje korisnika.
+
+```{r basic-stats}
+music_data %>%
+  group_by(`Primary streaming service`) %>%
+  summarise(
+    count = n(),
+    mean_age = mean(Age, na.rm = TRUE),
+    median_age = median(Age, na.rm = TRUE),
+    mean_hours = mean(`Hours per day`, na.rm = TRUE),
+    median_hours = median(`Hours per day`, na.rm = TRUE)
+  ) %>%
+  arrange(desc(count))
 ```
