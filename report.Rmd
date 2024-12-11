@@ -36,9 +36,13 @@ head(music_data)
 
 ## Deskriptivna statistika
 
-Mjere centralne tendencije za varijable "Age" i "Hours per day" grupirane po primarnom streaming servisu, izostavljen je mod zato što nije dobra mjera centralne tendencije za ovaj dataset. Najveća frekvencija sati slušanja i godina ispitanika nije nužno najbolji pokazatelj sredine podataka, pogtovo za streaming servise s manje korisnika.
+### Mjere centralne tendencije
 
-```{r basic-stats}
+Mjere centralne tendencije za numeričke varijable "Age" i "Hours per day" grupirane po primarnom streaming servisu. Mod je izostavljen zato što nije dobra mjera centralne tendencije za ovaj dataset. Najveća frekvencija sati slušanja i godina ispitanika nije nužno najbolji pokazatelj sredine podataka, pogtovo za streaming servise s manje korisnika.
+
+Nije potrebno koristiti podrezanu aritmetičku sredinu jer su potencijalni ekstremni podaci značajni za analizu navika slušanja glazbe
+
+```{r central-tendency}
 music_data %>%
   group_by(`Primary streaming service`) %>%
   summarise(
@@ -49,4 +53,25 @@ music_data %>%
     median_hours = median(`Hours per day`, na.rm = TRUE)
   ) %>%
   arrange(desc(count))
+```
+
+### Mjere rasipanja
+
+Mjere rasipanja za varijable "Age" i "Hours per day" grupirane po primarnom streaming servisu. Pomoću standardne devijacije i ranga donosimo zaključke da Spotify ima najveći rang godina (ima i najviše korisnika među ispitanicima općenito), dok Pandora ima najveću standardnu devijaciju godina među svojim korisnicima (čemu pridonosi činjenica da je Pandora najmanje zastupljena među ispitanicima).
+
+```{r dispersion}
+music_data %>%
+  group_by(`Primary streaming service`) %>%
+  summarise(
+    sd_age = sd(Age, na.rm = TRUE),
+    range_age = max(Age, na.rm = TRUE) - min(Age, na.rm = TRUE),
+    sd_hours = sd(`Hours per day`, na.rm = TRUE),
+    range_hours = max(`Hours per day`, na.rm = TRUE) - min(`Hours per day`, na.rm = TRUE)
+  ) %>%
+  arrange(desc(sd_age))
+```
+
+### Vizualizacija box plot
+```{r boxplot}
+# TODO: dodati boxplot
 ```
