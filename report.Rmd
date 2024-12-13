@@ -22,6 +22,7 @@ U analizu je uključen skup podataka sa 736 odgovora na anketu koja istražuje s
 library(tidyverse) 
 library(modeest) 
 library(dplyr)
+library(nortest)
 ```
 
 ```{r source-scripts}
@@ -80,7 +81,7 @@ music_data %>%
   arrange(desc(sd_age))
 ```
 
-### Vizualizacija box plot
+### Vizualizacija boxplot
 
 Iz box plotova vizualiziranih ispod možemo zaključiti da mlađi ispitanici preferiraju Spotify, Apple Music i YouTubeMusic dok stariji ispitanici preferiraju Pandoru ili alternativne servise. Spotify ima najaktivnije korisnike s najviše slušanih sati dnevno s najviše ljudi koji premašuju gornje whiskere boxplota. Outlieri prikazani boxplotom su zdravi i razumni podaci.
 
@@ -103,6 +104,7 @@ music_data %>%
 ```
 
 ### Vizualizacija barplot
+
 Barplotom ćemo vizualiraiti neke kategoričke varijable koje će biti od značaja u daljnim analizama. Izabrane kategoričke varijable su "Instrumentalist", "Composer", "Fav genre" i "Exploratory".
 
 ```{r barplot_binary}
@@ -114,4 +116,73 @@ print(plot)
 ```{r barplot_fav_genre}
 plot <- create_fav_genre_plot(music_data)
 print(plot)
+```
+
+### Histogrami i provjere normalnosti
+
+Za provjeru normalnosti distribucije numeričkih varijabli koristimo vizualne i statističke metode. Vizualno ćemo distribucije prikazati histogramima, dok ćemo statistički normalnost testirati Lillieforsovom inačicom Kolmogorov-Smirnov testa. Ovaj test je modifikacija standardnog Kolmogorov-Smirnov testa gdje se parametri normalne distribucije (srednja vrijednost i standardna devijacija) procjenjuju iz uzorka. Nulta hipoteza testa je da podaci dolaze iz normalne distribucije, a test provodimo na razini značajnosti α = 0.05. Provjeru provodimo za numeričke varijable: Hours per day te samoprocjenjene skale Anxiety, Depression, Insomnia, OCD.
+
+```{r histogram_hours_per_day}
+music_data %>%
+  ggplot(aes(x = `Hours per day`)) +
+  geom_histogram(binwidth = 1, fill = "lightgreen", color = "black") +
+  labs(title = "Histogram sati slušanja dnevno",
+       x = "Broj sati dnevno",
+       y = "Broj ispitanika")
+```
+
+```{r normality_test_hours_per_day}
+lillie.test(music_data$`Hours per day`)
+```
+
+```{r histogram_anxiety}
+music_data %>%
+  ggplot(aes(x = Anxiety)) +
+  geom_histogram(binwidth = 1, fill = "lightblue", color = "black") +
+  labs(title = "Histogram anksioznosti",
+       x = "Anksioznost",
+       y = "Broj ispitanika")
+```
+
+```{r normality_test_anxiety}
+lillie.test(music_data$Anxiety)
+```
+
+```{r histogram_depression}
+music_data %>%
+  ggplot(aes(x = Depression)) +
+  geom_histogram(binwidth = 1, fill = "lightcoral", color = "black") +
+  labs(title = "Histogram depresije",
+       x = "Depresija",
+       y = "Broj ispitanika")
+```
+
+```{r normality_test_depression}
+lillie.test(music_data$Depression)
+```
+
+```{r histogram_insomnia}
+music_data %>%
+  ggplot(aes(x = Insomnia)) +
+  geom_histogram(binwidth = 1, fill = "lightyellow", color = "black") +
+  labs(title = "Histogram nesanice",
+       x = "Nesanica",
+       y = "Broj ispitanika")
+```
+
+```{r normality_test_insomnia}
+lillie.test(music_data$Insomnia)
+```
+
+```{r histogram_ocd}
+music_data %>%
+  ggplot(aes(x = OCD)) +
+  geom_histogram(binwidth = 1, fill = "plum2", color = "black") +
+  labs(title = "Histogram OCD",
+       x = "OCD",
+       y = "Broj ispitanika")
+```
+
+```{r normality_test_ocd}
+lillie.test(music_data$OCD)
 ```
