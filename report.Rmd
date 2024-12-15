@@ -91,7 +91,8 @@ music_data %>%
   geom_boxplot() +
   labs(title = "Dob ispitanika po primarnom streaming servisu",
        x = "Primarni streaming servis",
-       y = "Dob") + scale_fill_brewer(palette = "Set2")
+       y = "Dob") + scale_fill_brewer(palette = "Set2") +
+  theme_minimal()
 ```
 
 ```{r boxplot2}
@@ -100,7 +101,8 @@ music_data %>%
   geom_boxplot() +
   labs(title = "Sati slušanja dnevno po primarnom streaming servisu",
        x = "Primarni streaming servis",
-       y = "Broj sati dnevno") + scale_fill_brewer(palette = "Set2")
+       y = "Broj sati dnevno") + scale_fill_brewer(palette = "Set2") +
+  theme_minimal()
 ```
 
 ### Vizualizacija barplot
@@ -128,7 +130,8 @@ music_data %>%
   geom_histogram(binwidth = 1, fill = "lightgreen", color = "black") +
   labs(title = "Histogram sati slušanja dnevno",
        x = "Broj sati dnevno",
-       y = "Broj ispitanika")
+       y = "Broj ispitanika") +
+  theme_minimal()
 ```
 
 ```{r normality_test_hours_per_day}
@@ -141,7 +144,8 @@ music_data %>%
   geom_histogram(binwidth = 1, fill = "lightblue", color = "black") +
   labs(title = "Histogram anksioznosti",
        x = "Anksioznost",
-       y = "Broj ispitanika")
+       y = "Broj ispitanika") +
+  theme_minimal()
 ```
 
 ```{r normality_test_anxiety}
@@ -154,7 +158,8 @@ music_data %>%
   geom_histogram(binwidth = 1, fill = "lightcoral", color = "black") +
   labs(title = "Histogram depresije",
        x = "Depresija",
-       y = "Broj ispitanika")
+       y = "Broj ispitanika") +
+  theme_minimal() 
 ```
 
 ```{r normality_test_depression}
@@ -167,7 +172,8 @@ music_data %>%
   geom_histogram(binwidth = 1, fill = "lightyellow", color = "black") +
   labs(title = "Histogram nesanice",
        x = "Nesanica",
-       y = "Broj ispitanika")
+       y = "Broj ispitanika") +
+  theme_minimal() 
 ```
 
 ```{r normality_test_insomnia}
@@ -180,7 +186,8 @@ music_data %>%
   geom_histogram(binwidth = 1, fill = "plum2", color = "black") +
   labs(title = "Histogram OCD",
        x = "OCD",
-       y = "Broj ispitanika")
+       y = "Broj ispitanika")+
+  theme_minimal() 
 ```
 
 ```{r normality_test_ocd}
