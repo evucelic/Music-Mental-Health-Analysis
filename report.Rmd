@@ -186,3 +186,48 @@ music_data %>%
 ```{r normality_test_ocd}
 lillie.test(music_data$OCD)
 ```
+
+**Zaključak:** Na razini značajnosti α = 0.05, odbacujemo nultu hipotezu za sve numeričke varijable jer p-vrijednosti testa su manje od 0.05. To znači da podaci ne dolaze iz normalne distribucije.
+
+## Slušaju li skladatelji više glazbe dnevno od drugih?
+
+Izvdojimo prvo podatke slušanja glazbe dnevno po tome jesu li ispitanici skladatelji ili ne.
+
+```{r listening_composer}
+composers <- music_data %>%
+  filter(Composer == "Yes") %>%
+  select(`Hours per day`)
+
+ggplot(composers, aes(x = `Hours per day`)) +
+  geom_histogram(fill = "burlywood", color = "black", binwidth = 1) +
+  labs(title = paste("Sati slušanja dnevno za skladatelje\nProsjek =", 
+                    round(mean(composers$`Hours per day`), 2)),
+       x = "Sati dnevno",
+       y = "Broj ispitanika") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+```
+
+```{r listening_non_composer}
+non_composers <- music_data %>%
+  filter(Composer == "No") %>%
+  select(`Hours per day`)
+
+ggplot(non_composers, aes(x = `Hours per day`)) +
+  geom_histogram(fill = "cadetblue1", color = "black", binwidth = 1) +
+  labs(title = paste("Sati slušanja dnevno za ostale\nProsjek =", 
+                    round(mean(non_composers$`Hours per day`), 2)),
+       x = "Sati dnevno",
+       y = "Broj ispitanika") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+Iz histograma možemo zaključiti da skladatelji u prosjeku slušaju više glazbe dnevno od ostalih ispitanika. S obzirom na to da podaci nisu normalno distribuirani, provjerimo ovu tvrdnju neparametarskim Wilcoxonovim rank-sum testom. Wilcoxonov rank-sum test koristi se za uspoređivanje dva nezavisna uzorka. Nulta hipoteza testa je da nema razlike u satima slušanja dnevno između skladatelja i ostalih ispitanika, a test provodimo na razini značajnosti α = 0.05.
+
+```{r wilcox}
+wilcox.test(composers$`Hours per day`, non_composers$`Hours per day`, alternative = "greater")
+```
+
+**Zaključak:** Prema rezultatima Wilcoxonovog rank-sum testa, odbacujemo nultu hipotezu na razini značajnosti α = 0.05 u korist alternativne hipoteze. To znači da skladatelji u prosjeku slušaju više glazbe dnevno od ostalih ispitanika.
