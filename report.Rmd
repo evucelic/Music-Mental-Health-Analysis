@@ -134,10 +134,10 @@ music_data %>%
   theme_minimal()
 ```
 
-
 ```{r normality_test_hours_per_day}
 lillie.test(music_data$`Hours per day`)
 ```
+
 Provjerimo jesu li podaci o dnevnom slušaju potencijalno log-normalni
 
 ```{r histogram_log_hours_per_day}
@@ -257,3 +257,32 @@ wilcox.test(composers$`Hours per day`, non_composers$`Hours per day`, alternativ
 ```
 
 **Zaključak:** Prema rezultatima Wilcoxonovog rank-sum testa, odbacujemo nultu hipotezu na razini značajnosti α = 0.05 u korist alternativne hipoteze. To znači da skladatelji u prosjeku slušaju više glazbe dnevno od ostalih ispitanika.
+
+## Postoji li povezanost između korištenog servisa i sklonosti istraživanju
+
+Kako bismo provjerili ovu tvrdnju provodimo test nezavisnosti $\chi^2$. Nulta hipoteza testa je da nema povezanosti između primarnog streaming servisa i sklonosti istraživanju, a test provodimo na razini značajnosti α = 0.05. Iz testa smo izbacili streaming servis "Pandora" jer ima premalo podataka za statističku analizu (ne vrijedi pretpostavka da su frekvencije podataka \>= 5). Također smo izbacili i "None" jer su to ispitanici koji ne koriste streaming servise.
+
+```{r chi-square}
+music_data %>%
+  filter(`Primary streaming service` != "Pandora" & `Primary streaming service` != "None") %>%
+  with(table(`Primary streaming service`, Exploratory)) -> tbl
+
+chisq.test(tbl)
+```
+
+Na razini značajnosti 0.05, odbacujemo nultu hipotezu u korist alternativne hipoteze. To znači da postoji povezanost između primarnog streaming servisa i sklonosti istraživanju. Iako da smo koristili razinu značajnosti 0.01, ne bismo odbacili nultu hipotezu.
+
+```{r exploratory_barplot}
+music_data %>%
+  filter(`Primary streaming service` != "None") %>%
+  ggplot(aes(x = reorder(`Primary streaming service`, Exploratory == "Yes", FUN = mean), 
+             fill = Exploratory)) +
+  geom_bar(position = "fill") +
+  labs(title = "Sklonost istraživanju po primarnom streaming servisu",
+       x = "Primarni streaming servis",
+       y = "Udio") +
+  scale_fill_manual(values = c("No" = "#DF6051", "Yes" = "lightblue")) +
+  theme_minimal()
+```
+
+**Zaključak:** Prema rezultatima $\chi^2$ testa, odbacili smo nultu hipotezu u korist alternativne. To znači da postoji povezanost između primarnog streaming servisa i sklonosti istraživanju. Vizualizacijom iznad možemo primijetiti da korisnici Spotifyja i Apple Musica imaju veću sklonost istraživanju u odnosu na korisnike drugih servisa.
