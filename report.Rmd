@@ -134,9 +134,28 @@ music_data %>%
   theme_minimal()
 ```
 
+
 ```{r normality_test_hours_per_day}
 lillie.test(music_data$`Hours per day`)
 ```
+Provjerimo jesu li podaci o dnevnom slušaju potencijalno log-normalni
+
+```{r histogram_log_hours_per_day}
+music_data %>%
+  filter(`Hours per day` > 0) %>%
+  ggplot(aes(x = log(`Hours per day`))) +
+  geom_histogram(binwidth = 0.5, fill = "lightgreen", color = "black") +
+  labs(title = "Histogram logaritma sati slušanja dnevno",
+       x = "log(Broj sati dnevno)",
+       y = "Broj ispitanika") +
+  theme_minimal()
+```
+
+```{r normality_test_log_hours_per_day}
+lillie.test(log(music_data$`Hours per day`[music_data$`Hours per day` > 0]))
+```
+
+Vidimo da i dalje nisu normalno distribuirani. Nastavimo s provjerom za druge varijable.
 
 ```{r histogram_anxiety}
 music_data %>%
