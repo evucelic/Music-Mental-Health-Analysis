@@ -245,20 +245,22 @@ wilcox.test(composers$`Hours per day`, non_composers$`Hours per day`, alternativ
 
 ## 3. Postoji li povezanost između korištenog servisa i sklonosti istraživanju
 
-Kako bismo provjerili ovu tvrdnju provodimo test nezavisnosti $\chi^2$. Nulta hipoteza testa je da nema povezanosti između primarnog streaming servisa i sklonosti istraživanju, a test provodimo na razini značajnosti α = 0.05. Iz testa smo izbacili streaming servis "Pandora" jer ima premalo podataka za statističku analizu (ne vrijedi pretpostavka da su frekvencije podataka \>= 5). Također smo izbacili i "None" jer su to ispitanici koji ne koriste streaming servise.
+Kako bismo provjerili ovu tvrdnju provodimo test nezavisnosti $\chi^2$. Nulta hipoteza testa je da nema povezanosti između primarnog streaming servisa i sklonosti istraživanju, a test provodimo na razini značajnosti α = 0.05. Umjesto da izbacujemo streaming servis "Pandora", grupirali smo ga zajedno s "Other" stavkom kako bismo zadovoljili pretpostavku testa da su frekvencije podataka ≥ 5. Također, izbacili smo "None" jer su to ispitanici koji ne koriste streaming servise.
 
 ```{r chi-square}
 music_data %>%
-  filter(`Primary streaming service` != "Pandora" & `Primary streaming service` != "None") %>%
+  mutate(`Primary streaming service` = ifelse(`Primary streaming service` == "Pandora", "Other", `Primary streaming service`)) %>%
+  filter(`Primary streaming service` != "None") %>%
   with(table(`Primary streaming service`, Exploratory)) -> tbl
 
 chisq.test(tbl)
 ```
 
-Na razini značajnosti 0.05, odbacujemo nultu hipotezu u korist alternativne hipoteze. To znači da postoji povezanost između primarnog streaming servisa i sklonosti istraživanju. Iako da smo koristili razinu značajnosti 0.01, ne bismo odbacili nultu hipotezu.
+Na razini značajnosti 0.05, odbacujemo nultu hipotezu u korist alternativne hipoteze. To znači da postoji povezanost između primarnog streaming servisa i sklonosti istraživanju. Naime da smo koristili razinu značajnosti 0.01, ne bismo odbacili nultu hipotezu.
 
 ```{r exploratory_barplot}
 music_data %>%
+    mutate(`Primary streaming service` = ifelse(`Primary streaming service` == "Pandora", "Other", `Primary streaming service`)) %>%
   filter(`Primary streaming service` != "None") %>%
   ggplot(aes(x = reorder(`Primary streaming service`, Exploratory == "Yes", FUN = mean), 
              fill = Exploratory)) +
