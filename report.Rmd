@@ -23,6 +23,7 @@ library(tidyverse)
 library(modeest) 
 library(dplyr)
 library(nortest)
+library(ggplot2)
 ```
 
 ```{r source-scripts}
@@ -215,42 +216,26 @@ lillie.test(music_data$OCD)
 
 **Zaključak:** Na razini značajnosti α = 0.05, odbacujemo nultu hipotezu za sve numeričke varijable jer p-vrijednosti testa su manje od 0.05. To znači da podaci ne dolaze iz normalne distribucije.
 
-## Slušaju li skladatelji više glazbe dnevno od drugih?
+## 1. Slušaju li skladatelji više glazbe dnevno od drugih?
 
-Izvdojimo prvo podatke slušanja glazbe dnevno po tome jesu li ispitanici skladatelji ili ne.
+Izvdojimo podatke slušanja glazbe dnevno po tome jesu li ispitanici skladatelji ili ne i vizualizirajmo ih boxplotom.
 
-```{r listening_composer}
-composers <- music_data %>%
-  filter(Composer == "Yes") %>%
-  select(`Hours per day`)
 
-ggplot(composers, aes(x = `Hours per day`)) +
-  geom_histogram(fill = "burlywood", color = "black", binwidth = 1) +
-  labs(title = paste("Sati slušanja dnevno za skladatelje\nProsjek =", 
-                    round(mean(composers$`Hours per day`), 2)),
-       x = "Sati dnevno",
-       y = "Broj ispitanika") +
+```{r listening_boxplot_comparison}
+music_data %>%
+  ggplot(aes(x = Composer, y = `Hours per day`, fill = Composer)) +
+  geom_boxplot(width=0.5) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 4, color="darkred") +
+  labs(title = "Usporedba sati slušanja dnevno između skladatelja i ostalih ispitanika",
+       x = "Skladatelj",
+       y = "Sati dnevno",
+       subtitle = "Točke predstavljaju aritmetičku sredinu" ) +
   theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+  theme(legend.position = "none")
 
 ```
 
-```{r listening_non_composer}
-non_composers <- music_data %>%
-  filter(Composer == "No") %>%
-  select(`Hours per day`)
-
-ggplot(non_composers, aes(x = `Hours per day`)) +
-  geom_histogram(fill = "cadetblue1", color = "black", binwidth = 1) +
-  labs(title = paste("Sati slušanja dnevno za ostale\nProsjek =", 
-                    round(mean(non_composers$`Hours per day`), 2)),
-       x = "Sati dnevno",
-       y = "Broj ispitanika") +
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))
-```
-
-Iz histograma možemo zaključiti da skladatelji u prosjeku slušaju više glazbe dnevno od ostalih ispitanika. S obzirom na to da podaci nisu normalno distribuirani, provjerimo ovu tvrdnju neparametarskim Wilcoxonovim rank-sum testom. Wilcoxonov rank-sum test koristi se za uspoređivanje dva nezavisna uzorka. Nulta hipoteza testa je da nema razlike u satima slušanja dnevno između skladatelja i ostalih ispitanika, a test provodimo na razini značajnosti α = 0.05.
+Iz boxplota možemo zaključiti da skladatelji u prosjeku slušaju više glazbe dnevno od ostalih ispitanika. S obzirom na to da podaci nisu normalno distribuirani, provjerimo ovu tvrdnju neparametarskim Wilcoxonovim rank-sum testom. Wilcoxonov rank-sum test koristi se za uspoređivanje dva nezavisna uzorka. Nulta hipoteza testa je da nema razlike u satima slušanja dnevno između skladatelja i ostalih ispitanika, a test provodimo na razini značajnosti α = 0.05.
 
 ```{r wilcox}
 wilcox.test(composers$`Hours per day`, non_composers$`Hours per day`, alternative = "greater")
@@ -258,7 +243,7 @@ wilcox.test(composers$`Hours per day`, non_composers$`Hours per day`, alternativ
 
 **Zaključak:** Prema rezultatima Wilcoxonovog rank-sum testa, odbacujemo nultu hipotezu na razini značajnosti α = 0.05 u korist alternativne hipoteze. To znači da skladatelji u prosjeku slušaju više glazbe dnevno od ostalih ispitanika.
 
-## Postoji li povezanost između korištenog servisa i sklonosti istraživanju
+## 3. Postoji li povezanost između korištenog servisa i sklonosti istraživanju
 
 Kako bismo provjerili ovu tvrdnju provodimo test nezavisnosti $\chi^2$. Nulta hipoteza testa je da nema povezanosti između primarnog streaming servisa i sklonosti istraživanju, a test provodimo na razini značajnosti α = 0.05. Iz testa smo izbacili streaming servis "Pandora" jer ima premalo podataka za statističku analizu (ne vrijedi pretpostavka da su frekvencije podataka \>= 5). Također smo izbacili i "None" jer su to ispitanici koji ne koriste streaming servise.
 
