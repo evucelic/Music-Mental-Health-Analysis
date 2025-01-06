@@ -28,6 +28,7 @@ library(ggplot2)
 
 ```{r source-scripts}
 source("R/barplots.R")
+source("R/normality_tests.R")
 ```
 
 ```{r load-data}
@@ -93,7 +94,8 @@ music_data %>%
   labs(title = "Dob ispitanika po primarnom streaming servisu",
        x = "Primarni streaming servis",
        y = "Dob") + scale_fill_brewer(palette = "Set2") +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "none")
 ```
 
 ```{r boxplot2}
@@ -103,7 +105,8 @@ music_data %>%
   labs(title = "Sati slušanja dnevno po primarnom streaming servisu",
        x = "Primarni streaming servis",
        y = "Broj sati dnevno") + scale_fill_brewer(palette = "Set2") +
-  theme_minimal()
+  theme_minimal() + 
+  theme(legend.position = "none")
 ```
 
 ### Vizualizacija barplot
@@ -123,9 +126,12 @@ print(plot)
 
 ### Histogrami i provjere normalnosti
 
-Za provjeru normalnosti distribucije numeričkih varijabli koristimo vizualne i statističke metode. Vizualno ćemo distribucije prikazati histogramima, dok ćemo statistički normalnost testirati Lillieforsovom inačicom Kolmogorov-Smirnov testa. Ovaj test je modifikacija standardnog Kolmogorov-Smirnov testa gdje se parametri normalne distribucije (srednja vrijednost i standardna devijacija) procjenjuju iz uzorka. Nulta hipoteza testa je da podaci dolaze iz normalne distribucije, a test provodimo na razini značajnosti α = 0.05. Provjeru provodimo za numeričke varijable: Hours per day te samoprocjenjene skale Anxiety, Depression, Insomnia, OCD.
+Za provjeru normalnosti distribucije numeričkih varijabli koristimo vizualne i statističke metode. Vizualno ćemo distribucije prikazati histogramima, dok ćemo statistički normalnost testirati **Lillieforsovom inačicom Kolmogorov-Smirnov testa**. Ovaj test je modifikacija standardnog Kolmogorov-Smirnov testa gdje se parametri normalne distribucije (srednja vrijednost i standardna devijacija) procjenjuju iz uzorka. Nulta hipoteza testa je da podaci dolaze iz normalne distribucije, a test provodimo na razini značajnosti α = 0.05. Provjeru provodimo za numeričke varijable: Hours per day te samoprocjenjene skale Anxiety, Depression, Insomnia, OCD.
 
 ```{r histogram_hours_per_day}
+mean_hours <- mean(music_data$`Hours per day`, na.rm = TRUE)
+sd_hours <- sd(music_data$`Hours per day`, na.rm = TRUE)
+
 music_data %>%
   ggplot(aes(x = `Hours per day`)) +
   geom_histogram(binwidth = 1, fill = "lightgreen", color = "black") +
@@ -135,11 +141,7 @@ music_data %>%
   theme_minimal()
 ```
 
-```{r normality_test_hours_per_day}
-lillie.test(music_data$`Hours per day`)
-```
-
-Provjerimo jesu li podaci o dnevnom slušaju potencijalno log-normalni
+Provjerimo također jesu li podaci o dnevnom slušaju potencijalno log-normalni
 
 ```{r histogram_log_hours_per_day}
 music_data %>%
@@ -152,11 +154,14 @@ music_data %>%
   theme_minimal()
 ```
 
-```{r normality_test_log_hours_per_day}
-lillie.test(log(music_data$`Hours per day`[music_data$`Hours per day` > 0]))
+Iz tablice ispod svih histograma, vidimo da i dalje nisu normalno distribuirani. Osim i pomoću histograma i testa, možemo to vidjeti i qqplot-om koji ćemo provesti samo za varijablu "Hours per day" radi preglednosti.
+
+```{r qqplot_hours_per_day}
+qqnorm(music_data$`Hours per day`)
+qqline(music_data$`Hours per day`, col = "steelblue", lwd = 2)
 ```
 
-Vidimo da i dalje nisu normalno distribuirani. Nastavimo s provjerom za druge varijable.
+Ovdje opet vidimo da podaci nisu normalno distribuirani. Sada ćemo provjeriti normalnost distribucije za preostale varijable.
 
 ```{r histogram_anxiety}
 music_data %>%
@@ -166,10 +171,6 @@ music_data %>%
        x = "Anksioznost",
        y = "Broj ispitanika") +
   theme_minimal()
-```
-
-```{r normality_test_anxiety}
-lillie.test(music_data$Anxiety)
 ```
 
 ```{r histogram_depression}
@@ -182,10 +183,6 @@ music_data %>%
   theme_minimal() 
 ```
 
-```{r normality_test_depression}
-lillie.test(music_data$Depression)
-```
-
 ```{r histogram_insomnia}
 music_data %>%
   ggplot(aes(x = Insomnia)) +
@@ -194,10 +191,6 @@ music_data %>%
        x = "Nesanica",
        y = "Broj ispitanika") +
   theme_minimal() 
-```
-
-```{r normality_test_insomnia}
-lillie.test(music_data$Insomnia)
 ```
 
 ```{r histogram_ocd}
@@ -210,8 +203,8 @@ music_data %>%
   theme_minimal() 
 ```
 
-```{r normality_test_ocd}
-lillie.test(music_data$OCD)
+```{r normality_tests}
+analyze_normality(music_data)
 ```
 
 **Zaključak:** Na razini značajnosti α = 0.05, odbacujemo nultu hipotezu za sve numeričke varijable jer p-vrijednosti testa su manje od 0.05. To znači da podaci ne dolaze iz normalne distribucije.
@@ -219,7 +212,6 @@ lillie.test(music_data$OCD)
 ## 1. Slušaju li skladatelji više glazbe dnevno od drugih?
 
 Izvdojimo podatke slušanja glazbe dnevno po tome jesu li ispitanici skladatelji ili ne i vizualizirajmo ih boxplotom.
-
 
 ```{r listening_boxplot_comparison}
 music_data %>%
@@ -247,12 +239,16 @@ wilcox.test(composers$`Hours per day`, non_composers$`Hours per day`, alternativ
 
 Kako bismo provjerili ovu tvrdnju provodimo test nezavisnosti $\chi^2$. Nulta hipoteza testa je da nema povezanosti između primarnog streaming servisa i sklonosti istraživanju, a test provodimo na razini značajnosti α = 0.05. Umjesto da izbacujemo streaming servis "Pandora", grupirali smo ga zajedno s "Other" stavkom kako bismo zadovoljili pretpostavku testa da su frekvencije podataka ≥ 5. Također, izbacili smo "None" jer su to ispitanici koji ne koriste streaming servise.
 
-```{r chi-square}
+```{r contingency_table}
 music_data %>%
   mutate(`Primary streaming service` = ifelse(`Primary streaming service` == "Pandora", "Other", `Primary streaming service`)) %>%
   filter(`Primary streaming service` != "None") %>%
   with(table(`Primary streaming service`, Exploratory)) -> tbl
 
+tbl
+```
+
+```{r chi-square-test}
 chisq.test(tbl)
 ```
 
