@@ -235,6 +235,8 @@ wilcox.test(composers$`Hours per day`, non_composers$`Hours per day`, alternativ
 
 **Zaključak:** Prema rezultatima Wilcoxonovog rank-sum testa, odbacujemo nultu hipotezu na razini značajnosti α = 0.05 u korist alternativne hipoteze. To znači da skladatelji u prosjeku slušaju više glazbe dnevno od ostalih ispitanika.
 
+## 2.  Korelacije izmedu frekvencija sluˇsanja razliˇcitih glazbenih ˇzanrova i samoprocijenjenih razina mentalnih poreme´caja
+
 ## 3. Postoji li povezanost između korištenog servisa i sklonosti istraživanju
 
 Kako bismo provjerili ovu tvrdnju provodimo test nezavisnosti $\chi^2$. Nulta hipoteza testa je da nema povezanosti između primarnog streaming servisa i sklonosti istraživanju, a test provodimo na razini značajnosti α = 0.05. Umjesto da izbacujemo streaming servis "Pandora", grupirali smo ga zajedno s "Other" stavkom kako bismo zadovoljili pretpostavku testa da su frekvencije podataka ≥ 5. Također, izbacili smo "None" jer su to ispitanici koji ne koriste streaming servise.
