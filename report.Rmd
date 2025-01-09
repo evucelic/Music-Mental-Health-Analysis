@@ -24,6 +24,7 @@ library(modeest)
 library(dplyr)
 library(nortest)
 library(ggplot2)
+library(corrplot)
 ```
 
 ```{r source-scripts}
@@ -33,6 +34,8 @@ source("R/normality_tests.R")
 
 ```{r load-data}
 music_data <- read_csv("data/processed/dataset_reduced.csv", show_col_types = FALSE)
+colnames(music_data) <- gsub("\\[|\\]", "_", colnames(music_data))
+print(colnames(music_data))
 
 head(music_data)
 ```
@@ -234,6 +237,46 @@ wilcox.test(composers$`Hours per day`, non_composers$`Hours per day`, alternativ
 ```
 
 **Zaključak:** Prema rezultatima Wilcoxonovog rank-sum testa, odbacujemo nultu hipotezu na razini značajnosti α = 0.05 u korist alternativne hipoteze. To znači da skladatelji u prosjeku slušaju više glazbe dnevno od ostalih ispitanika.
+
+## 2. Korelacije izmedu frekvencija slušanja različitih glazbenih žanrova i samoprocijenjenih razina mentalnih poremećaja
+
+Cilj ove analize je ispitati povezanost između učestalosti slušanja različitih glazbenih žanrova i samoprocijenjenih razina mentalnih poremećaja (anksioznost, depresija, nesanica, OCD). Korelacije nam pomažu identificirati obrasce u podacima, primjerice, je li povećana učestalost slušanja određenog žanra povezana s višim ili nižim razinama mentalnih poremećaja. Budući da podaci nisu normalno distribuirani, koristimo **Spearmanovu rang korelaciju**. Korelacija se izražava koeficijentom koji može imati vrijednosti od -1 (negativna korelacija) do +1 (pozitivna korelacija), dok p-vrijednost pokazuje je li korelacija statistički značajna.
+
+Na kraju ćemo posebno analizirati povezanost između učestalosti slušanja metal žanra i razine depresije kako bismo provjerili postoji li značajna korelacija između tih varijabli.
+
+```{r}
+# Odabiremo samo potrebne varijable
+columns_of_interest <- c("Frequency _Classical_", "Frequency _Country_", "Frequency _EDM_", "Frequency _Folk_", "Frequency _Gospel_", "Frequency _Hip hop_", "Frequency _Jazz_", "Frequency _K pop_", "Frequency _Latin_", "Frequency _Lofi_", "Frequency _Metal_", "Frequency _Pop_", "Frequency _R&B_", "Frequency _Rap_", "Frequency _Rock_", "Frequency _Video game music_", "Anxiety", "Depression", "Insomnia", "OCD")
+data_subset <- music_data[, columns_of_interest]
+
+# Mapiranje, pretvorba kategorijskih frekvencija u numeričke
+convert_frequency <- function(frequency) {
+  case_when(
+    frequency == "Never" ~ 0,
+    frequency == "Rarely" ~ 1,
+    frequency == "Sometimes" ~ 2,
+    frequency == "Very frequently" ~ 3,
+    TRUE ~ NA_real_ 
+  )
+}
+
+data_subset <- data_subset %>%
+  mutate(across(starts_with("Frequency"), convert_frequency))
+
+str(data_subset)
+
+# Izračun korelacija - Spearman
+correlation_matrix <- cor(data_subset, method = "spearman", use = "pairwise.complete.obs")
+
+# Vizualizacija
+corrplot(correlation_matrix, method = "color", type = "lower", tl.col = "black",
+         tl.cex = 0.7, col = colorRampPalette(c("blue", "white", "red"))(200))
+
+metal_depression_test <- cor.test(data_subset$`Frequency _Metal_`, data_subset$Depression, method = "spearman")
+print(metal_depression_test)
+```
+
+**Zaključak:** Rezultati Spearmanove korelacije pokazuju slab pozitivni odnos (rho = 0.1887) između učestalosti slušanja metal glazbe i samoprocijenjene razine depresije. To znači da je moguće da ispitanici koji češće slušaju metal glazbu imaju nešto višu razinu depresije. P-vrijednost iznosi 2.509e-07, što ukazuje na to da je korelacija statistički značajna. Ovaj rezultat sugerira da je odnos između slušanja metal glazbe i depresije vjerojatno stvaran i nije posljedica slučajnosti.
 
 ## 3. Postoji li povezanost između korištenog servisa i sklonosti istraživanju
 
