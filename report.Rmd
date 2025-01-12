@@ -312,3 +312,55 @@ music_data %>%
 ```
 
 **Zaključak:** Prema rezultatima $\chi^2$ testa, odbacili smo nultu hipotezu u korist alternativne. To znači da postoji povezanost između primarnog streaming servisa i sklonosti istraživanju. Vizualizacijom iznad možemo primijetiti da korisnici Spotifyja i Apple Musica imaju veću sklonost istraživanju u odnosu na korisnike drugih servisa.
+
+## 4. Razlikuje li se prosječni broj sati slušanja glazbe značajno među korisnicima ovisno o njihovim omiljenim žanrovima?
+
+ANOVA (engl. *ANalysis Of VAriance*) je metoda kojom testiramo sredine više populacija. U ovom slučaju, testiramo razlike u prosječnom broju sati slušanja glazbe dnevno među korisnicima ovisno o njihovim omiljenim žanrovima. Nulta hipoteza testa je da nema razlike u prosječnom broju sati slušanja dnevno među korisnicima omiljenih žanrova, a test provodimo na razini značajnosti α = 0.05. Radi distribucije podataka, koristimo **Kruskal-Wallisov test** koji je neparametarska verzija ANOVA-e.
+
+Za početak, prebrojavamo koliko ispitanika preferira svaki žanr.
+
+```{r genre_count}
+music_data %>%
+  group_by(`Fav genre`) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+```
+
+Radi preglednosti, grupirat ćemo žanrove s manje od 10 ispitanika u kategoriju "Other". Također, spojit ćemo hip-hop i rap jer su često povezani žanrovi.
+
+```{r genre_grouping}
+music_data_copy_grouped_by_genre = music_data %>%
+  mutate(`Fav genre` = ifelse(`Fav genre` == "Latin" | `Fav genre` == "Lofi" | `Fav genre` == "Gospel", "Other", `Fav genre`))
+```
+
+Zatim vizualiziramo boxplotom razlike u prosječnom broju sati slušanja dnevno među korisnicima omiljenih žanrova.
+
+```{r listening_by_genre_boxplot_comparison}
+music_data %>%
+  ggplot(aes(x = `Fav genre`, y = `Hours per day`, fill = `Fav genre`)) +
+  geom_boxplot(width=0.5) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 4, color="darkred") +
+  labs(title = "Usporedba sati slušanja dnevno ovisno o omiljenim žanrovima",
+       x = "Žanr",
+       y = "Sati dnevno",
+       subtitle = "Točke predstavljaju aritmetičku sredinu" ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+```
+
+Provodimo test homogenosti varijanci kako bismo provjerili pretpostavku o jednakim varijancama među skupinama. Nulta hipoteza testa je da su varijance jednake, a test provodimo na razini značajnosti α = 0.05.
+
+```{r levene_test}
+music_data$`Fav genre` <- as.factor(music_data$`Fav genre`)
+
+leveneTest(`Hours per day` ~ `Fav genre`, data = music_data)
+```
+
+Na razini značajnosti 0.05, ne odbacujemo nultu hipotezu. To znači da su varijance jednake među skupinama. S obzirom na to, provodimo Kruskal-Wallisov test.
+
+```{r kruskal_wallis}
+kruskal.test(`Hours per day` ~ `Fav genre`, data = music_data)
+```
+
+**Zaključak:** Na razini značajnosti 0.05, odbacujemo nultu hipotezu u korist alternativne. To znači da postoji značajna razlika u prosječnom broju sati slušanja dnevno među korisnicima omiljenih žanrova.
