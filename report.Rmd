@@ -25,6 +25,8 @@ library(dplyr)
 library(nortest)
 library(ggplot2)
 library(corrplot)
+library(car)
+library(fastDummies)
 ```
 
 ```{r source-scripts}
@@ -36,6 +38,9 @@ source("R/normality_tests.R")
 music_data <- read_csv("data/processed/dataset_reduced.csv", show_col_types = FALSE)
 colnames(music_data) <- gsub("\\[|\\]", "_", colnames(music_data))
 print(colnames(music_data))
+
+# omit na values
+music_data <- na.omit(music_data)
 
 head(music_data)
 ```
@@ -364,3 +369,82 @@ kruskal.test(`Hours per day` ~ `Fav genre`, data = music_data)
 ```
 
 **Zaključak:** Na razini značajnosti 0.05, odbacujemo nultu hipotezu u korist alternativne. To znači da postoji značajna razlika u prosječnom broju sati slušanja dnevno među korisnicima omiljenih žanrova.
+
+## 5. Može li se iz zadanih podataka predvidjeti dob ispitanika?
+
+Pretpostavke modela:
+- Linearnost: odnos između nezavisnih i zavisne varijable je linearni
+- Pogreške su nezavisne homogene i normalno distribuirane
+
+
+Napraviti ćemo korelacijske tablice da vidimo koje varijable bi mogle biti značajne za predviđanje dobi ispitanika. Nakon toga, provest ćemo linearnu regresiju.
+
+
+```{r correlation_matrix}
+numericvars <- music_data %>%
+  select(Age, `Hours per day`, `Depression`, `OCD`, `Anxiety`)
+correlation_matrix <- cor(numericvars, method = "spearman", use = "pairwise.complete.obs")
+
+corrplot(correlation_matrix, method = "color", type = "lower", tl.col = "black",
+         tl.cex = 0.7, col = colorRampPalette(c("blue", "white", "red"))(200))
+
+```
+```{r categorical_correlation_matrix}
+# Create all dummy variables first
+variables <- music_data %>%
+  select(Age, `Primary streaming service`, `Exploratory`, `While working`, `Composer`)
+
+dummyvars <- dummy_cols(variables, remove_selected_columns = TRUE) %>%
+  select(Age,
+         contains("_Youtube Music"),
+         contains("_Spotify"),
+         contains("_Apple"),
+         contains("_None"),
+         contains("Exploratory_"),
+         contains("While working_"),
+         contains("Composer_"))
+
+# Calculate and visualize correlation matrix
+correlation_matrix <- cor(dummyvars, method = "spearman", use = "pairwise.complete.obs")
+corrplot(correlation_matrix, method = "color", type = "lower", tl.col = "black",
+         tl.cex = 0.7, col = colorRampPalette(c("blue", "white", "red"))(200))
+```
+
+Prema korelacijskim tablicama odlučili smo uzeti varijable `Primary streaming service`, `Hours per day`, `Exploratory`, `Depression`, `While working`, `Composer`.
+
+```{r linear_regression_depression}
+model <- lm(Age ~ Depression, data = music_data)
+
+summary(model)
+
+par(mfrow=c(2,2))
+plot(model)
+
+ggplot(music_data, aes(x = Depression, y = Age)) +
+  geom_jitter(width = 0.2, alpha = 0.5) +
+  geom_smooth(method = "lm") +
+  theme_minimal() +
+  labs(title = "Age vs Depression",
+       x = "Depression Score",
+       y = "Age")
+
+```
+
+```{r linear_regression_hours_per_day}
+model <- lm(Age ~ `Hours per day`, data = music_data)
+
+summary(model)
+
+par(mfrow=c(2,2))
+plot(model)
+
+ggplot(music_data, aes(x = `Hours per day`, y = Age)) +
+  geom_jitter(width = 0.2, alpha = 0.5) +
+  geom_smooth(method = "lm") +
+  theme_minimal() +
+  labs(title = "Age vs Hours per day",
+       x = "Hours per day",
+       y = "Age")
+
+```
+
