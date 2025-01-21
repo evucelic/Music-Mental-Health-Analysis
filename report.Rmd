@@ -372,13 +372,9 @@ kruskal.test(`Hours per day` ~ `Fav genre`, data = music_data)
 
 ## 5. Može li se iz zadanih podataka predvidjeti dob ispitanika?
 
-Pretpostavke modela:
-- Linearnost: odnos između nezavisnih i zavisne varijable je linearni
-- Pogreške su nezavisne homogene i normalno distribuirane
-
+Pretpostavke modela: - Linearnost: odnos između nezavisnih i zavisne varijable je linearni - Pogreške su nezavisne homogene i normalno distribuirane
 
 Napraviti ćemo korelacijske tablice da vidimo koje varijable bi mogle biti značajne za predviđanje dobi ispitanika. Nakon toga, provest ćemo linearnu regresiju.
-
 
 ```{r correlation_matrix}
 numericvars <- music_data %>%
@@ -389,6 +385,7 @@ corrplot(correlation_matrix, method = "color", type = "lower", tl.col = "black",
          tl.cex = 0.7, col = colorRampPalette(c("blue", "white", "red"))(200))
 
 ```
+
 ```{r categorical_correlation_matrix}
 # Create all dummy variables first
 variables <- music_data %>%
@@ -448,3 +445,137 @@ ggplot(music_data, aes(x = `Hours per day`, y = Age)) +
 
 ```
 
+```{r}
+head(music_data)
+
+# Učitavanje potrebnih paketa
+library(tidyverse)
+library(caret)
+library(ggplot2)
+
+# Funkcija za konverziju frequency varijabli u numeričke
+convert_frequency <- function(x) {
+  freq_levels <- c("Never" = 0, "Rarely" = 1, "Sometimes" = 2, "Very frequently" = 3)
+  as.numeric(factor(x, levels = names(freq_levels))) - 1
+}
+
+# Funkcija za pripremu podataka
+prepare_data <- function(df) {
+  # Kopiranje dataframe-a
+  df_prep <- df %>%
+    # Izbacujemo Music effects i log_Age
+    select(-c(`Music effects`, log_Age)) %>%
+    # Pretvaranje kategoričkih varijabli u faktore
+    mutate(
+      `Primary streaming service` = as.factor(`Primary streaming service`),
+      `While working` = as.factor(`While working`),
+      Instrumentalist = as.factor(Instrumentalist),
+      Composer = as.factor(Composer),
+      `Fav genre` = as.factor(`Fav genre`),
+      Exploratory = as.factor(Exploratory),
+      `Foreign languages` = as.factor(`Foreign languages`)
+    )
+  
+  # Konverzija frequency varijabli
+  frequency_cols <- grep("Frequency", names(df_prep), value = TRUE)
+  for(col in frequency_cols) {
+    df_prep[[col]] <- convert_frequency(df_prep[[col]])
+  }
+  
+  # Kreiranje dummy varijabli za kategoričke varijable
+  categorical_cols <- c("Primary streaming service", "While working", 
+                       "Instrumentalist", "Composer", "Fav genre", 
+                       "Exploratory", "Foreign languages")
+  
+  dummy_data <- dummyVars("~ .", data = df_prep[categorical_cols])
+  dummy_matrix <- predict(dummy_data, df_prep[categorical_cols])
+  
+  # Priprema numeričkih varijabli
+  numeric_data <- df_prep %>%
+    select(Age, `Hours per day`, BPM, all_of(frequency_cols),
+           Anxiety, Depression, Insomnia, OCD)
+  
+  # Standardizacija numeričkih varijabli (osim Age)
+  numeric_scaled <- numeric_data %>%
+    select(-Age) %>%
+    scale() %>%
+    as.data.frame()
+  
+  # Spajanje svih podataka
+  final_data <- cbind(
+    Age = numeric_data$Age,
+    numeric_scaled,
+    dummy_matrix
+  )
+  
+  return(final_data)
+}
+
+# Funkcija za analizu
+analyze_age_prediction <- function(df) {
+  # Priprema podataka
+  data_final <- prepare_data(df)
+  
+  # Treniranje modela na svim podacima
+  model <- lm(Age ~ ., data = data_final)
+  
+  # Predikcije na istim podacima (za vizualizaciju)
+  predictions <- predict(model, newdata = data_final)
+  
+  # Analiza važnosti varijabli
+  importance <- data.frame(
+    Feature = names(coef(model))[-1],
+    Importance = abs(coef(model)[-1])
+  ) %>%
+    arrange(desc(Importance))
+  
+  # R-squared
+  r2 <- summary(model)$r.squared
+  
+  # Vizualizacija najvažnijih faktora
+  top_10_plot <- ggplot(importance %>% head(10), 
+                        aes(x = reorder(Feature, Importance), y = Importance)) +
+    geom_bar(stat = "identity") +
+    coord_flip() +
+    theme_minimal() +
+    labs(title = "Top 10 najvažnijih faktora za predikciju dobi",
+         x = "Faktori",
+         y = "Važnost")
+  
+  # Vizualizacija stvarnih vs. predviđenih vrijednosti
+  prediction_plot <- ggplot(data.frame(Actual = data_final$Age, 
+                                     Predicted = predictions), 
+                           aes(x = Actual, y = Predicted)) +
+    geom_point(alpha = 0.5) +
+    geom_abline(intercept = 0, slope = 1, color = "red") +
+    theme_minimal() +
+    labs(title = "Stvarne vs. Predviđene vrijednosti",
+         x = "Stvarna dob",
+         y = "Predviđena dob")
+  
+  return(list(
+    model = model,
+    r2 = r2,
+    importance = importance,
+    top_10_plot = top_10_plot,
+    prediction_plot = prediction_plot
+  ))
+}
+
+# Pokretanje analize
+results <- analyze_age_prediction(music_data)
+
+# Ispis rezultata
+print(paste("R2:", round(results$r2, 3)))
+
+# Prikaz vizualizacija
+print(results$top_10_plot)
+print(results$prediction_plot)
+
+# Pregled najvažnijih faktora
+print("Najvažniji faktori:")
+print(head(results$importance, 10))
+
+# Detaljan summary modela
+print(summary(results$model))
+```
