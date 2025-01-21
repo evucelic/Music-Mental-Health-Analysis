@@ -27,6 +27,7 @@ library(ggplot2)
 library(corrplot)
 library(car)
 library(fastDummies)
+library(caret)
 ```
 
 ```{r source-scripts}
@@ -362,6 +363,12 @@ music_data$`Fav genre` <- as.factor(music_data$`Fav genre`)
 leveneTest(`Hours per day` ~ `Fav genre`, data = music_data)
 ```
 
+```{r bartlett test}
+music_data$`Fav genre` <- as.factor(music_data$`Fav genre`)
+bartlett.test(`Hours per day` ~ `Fav genre`, data = music_data)
+```
+Vidimo da je Levene test bolji odabir jer naši podaci ne podliježu normalnoj razdiobi, a Bartlettov test je osjetljiv na ne-normalnu razdiobu.
+
 Na razini značajnosti 0.05, ne odbacujemo nultu hipotezu. To znači da su varijance jednake među skupinama. S obzirom na to, provodimo Kruskal-Wallisov test.
 
 ```{r kruskal_wallis}
@@ -418,7 +425,7 @@ par(mfrow=c(2,2))
 plot(model)
 
 ggplot(music_data, aes(x = Depression, y = Age)) +
-  geom_jitter(width = 0.2, alpha = 0.5) +
+  geom_point() +
   geom_smooth(method = "lm") +
   theme_minimal() +
   labs(title = "Age vs Depression",
@@ -436,7 +443,7 @@ par(mfrow=c(2,2))
 plot(model)
 
 ggplot(music_data, aes(x = `Hours per day`, y = Age)) +
-  geom_jitter(width = 0.2, alpha = 0.5) +
+  geom_point() +
   geom_smooth(method = "lm") +
   theme_minimal() +
   labs(title = "Age vs Hours per day",
@@ -446,12 +453,6 @@ ggplot(music_data, aes(x = `Hours per day`, y = Age)) +
 ```
 
 ```{r}
-head(music_data)
-
-# Učitavanje potrebnih paketa
-library(tidyverse)
-library(caret)
-library(ggplot2)
 
 # Funkcija za konverziju frequency varijabli u numeričke
 convert_frequency <- function(x) {
@@ -463,8 +464,7 @@ convert_frequency <- function(x) {
 prepare_data <- function(df) {
   # Kopiranje dataframe-a
   df_prep <- df %>%
-    # Izbacujemo Music effects i log_Age
-    select(-c(`Music effects`, log_Age)) %>%
+    select(-c(`Music effects`)) %>%
     # Pretvaranje kategoričkih varijabli u faktore
     mutate(
       `Primary streaming service` = as.factor(`Primary streaming service`),
@@ -492,8 +492,7 @@ prepare_data <- function(df) {
   
   # Priprema numeričkih varijabli
   numeric_data <- df_prep %>%
-    select(Age, `Hours per day`, BPM, all_of(frequency_cols),
-           Anxiety, Depression, Insomnia, OCD)
+    select(Age, `Hours per day`, BPM, all_of(frequency_cols), Depression)
   
   # Standardizacija numeričkih varijabli (osim Age)
   numeric_scaled <- numeric_data %>%
@@ -516,7 +515,6 @@ analyze_age_prediction <- function(df) {
   # Priprema podataka
   data_final <- prepare_data(df)
   
-  # Treniranje modela na svim podacima
   model <- lm(Age ~ ., data = data_final)
   
   # Predikcije na istim podacima (za vizualizaciju)
