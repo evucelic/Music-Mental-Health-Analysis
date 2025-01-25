@@ -238,6 +238,12 @@ music_data %>%
 Iz boxplota možemo zaključiti da skladatelji u prosjeku slušaju više glazbe dnevno od ostalih ispitanika. S obzirom na to da podaci nisu normalno distribuirani, provjerimo ovu tvrdnju neparametarskim Wilcoxonovim rank-sum testom. **Wilcoxonov rank-sum test** koristi se za uspoređivanje dva nezavisna uzorka. Nulta hipoteza testa je da nema razlike u satima slušanja dnevno između skladatelja i ostalih ispitanika, a test provodimo na razini značajnosti α = 0.05.
 
 ```{r wilcox}
+composers <- music_data %>%
+  filter(Composer == "Yes")
+
+non_composers <- music_data %>%
+  filter(Composer == "No")
+
 wilcox.test(composers$`Hours per day`, non_composers$`Hours per day`, alternative = "greater")
 ```
 
