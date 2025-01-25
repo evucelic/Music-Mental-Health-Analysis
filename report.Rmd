@@ -332,9 +332,11 @@ music_data %>%
 
 Radi preglednosti, grupirat ćemo žanrove s manje od 10 ispitanika u kategoriju "Other". Također, spojit ćemo hip-hop i rap jer su često povezani žanrovi.
 
-```{r genre_grouping}
-music_data_copy_grouped_by_genre = music_data %>%
-  mutate(`Fav genre` = ifelse(`Fav genre` == "Latin" | `Fav genre` == "Lofi" | `Fav genre` == "Gospel", "Other", `Fav genre`))
+```{r group-genres}
+music_data <- music_data %>%
+  mutate(`Fav genre` = ifelse(`Fav genre` == "Latin" | `Fav genre` == "Lofi" | `Fav genre` == "Gospel", "Other", `Fav genre`)) %>%
+  mutate(`Fav genre` = ifelse(`Fav genre` == "Hip hop", "Rap", `Fav genre`))
+
 ```
 
 Zatim vizualiziramo boxplotom razlike u prosječnom broju sati slušanja dnevno među korisnicima omiljenih žanrova.
@@ -365,6 +367,7 @@ leveneTest(`Hours per day` ~ `Fav genre`, data = music_data)
 music_data$`Fav genre` <- as.factor(music_data$`Fav genre`)
 bartlett.test(`Hours per day` ~ `Fav genre`, data = music_data)
 ```
+
 Vidimo da je Levene test bolji odabir jer naši podaci ne podliježu normalnoj razdiobi, a Bartlettov test je osjetljiv na ne-normalnu razdiobu.
 
 Na razini značajnosti 0.05, ne odbacujemo nultu hipotezu. To znači da su varijance jednake među skupinama. S obzirom na to, provodimo Kruskal-Wallisov test.
@@ -394,6 +397,8 @@ corrplot(correlation_matrix, method = "color", type = "lower", tl.col = "black",
 
 ```
 
+Definiramo funkcije za pretvorbu kategoričkih varijabli u dummy varijable kako bismo ih mogli koristiti u regresiji i korelacijskom testiranju.
+
 ```{r conversion_functions}
 convert_frequency <- function(x) {
   freq_levels <- c("Never" = 0, "Rarely" = 1, "Sometimes" = 2, "Very frequently" = 3)
@@ -417,6 +422,8 @@ convert_genre <- function(x) {
 }
 ```
 
+Radimo korelacijsku tablicu između `Age` i kategoričkih varijabli.
+
 ```{r correlation_matrix_categorical}
 corr_data <- music_data %>%
   select(`Age`, `Primary streaming service`, `While working`, Instrumentalist, 
@@ -433,6 +440,9 @@ correlation_matrix <- cor(corr_data, method = "spearman", use = "pairwise.comple
 corrplot(correlation_matrix, method = "color", type = "lower", 
         tl.col = "black", tl.cex = 0.7,
         col = colorRampPalette(c("blue", "white", "red"))(200))
+
+age_correlations <- abs(correlation_matrix["Age", ])
+age_correlations <- age_correlations[order(age_correlations, decreasing = TRUE)]
 
 age_correlations_df <- data.frame(
   Variable = names(age_correlations),
@@ -461,40 +471,38 @@ ggplot(music_data, aes(x = Depression, y = Age)) +
 
 
 qqnorm(model$residuals)
-qqline(model$residuals, col = "steelblue", lwd = 2)
+qqline(model$residuals, col = "red", lwd = 2)
 
 lillie.test(model$residuals)
 
 ```
 
-Vidimo da je OCD statistički značajan no slabo objašnjava dob ispitanika (niski R^2). Također, reziduali ne podliježu normalnoj razdiobi što znači da to nije značajna varijabla za model. Sada ćemo provesti linearnu regresiju za varijablu `Hours per day`.
-
+Vidimo da je OCD statistički značajan no slabo objašnjava dob ispitanika (niski R\^2). Također, reziduali ne podliježu normalnoj razdiobi što znači da to nije značajna varijabla za model. Sada ćemo provesti linearnu regresiju za varijablu `Hours per day`.
 
 ```{r linear_regression_hours_per_day}
 model <- lm(Age ~ `Hours per day`, data = music_data)
 
 summary(model)
 
+
 ggplot(music_data, aes(x = `Hours per day`, y = Age)) +
   geom_point() +
-  geom_smooth(method = "lm") +
+  geom_smooth(method = "lm") + # 95% confidence interval
   theme_minimal() +
   labs(title = "Age vs Hours per day",
        x = "Hours per day",
        y = "Age")
 
 qqnorm(model$residuals)
-qqline(model$residuals, col = "steelblue", lwd = 2)
+qqline(model$residuals, col = "red", lwd = 2)
 
 lillie.test(model$residuals)
 
 ```
 
-Vidimo da je veza između `Hours per day` i `Age` statistički značajna no R^2 vrijednost je vrlo niska. Reziduali ne podliježu normalnoj razdiobi što dodatno znači da to nije značajna varijabla za model. Iako je statistički značajna veza, rezultati nam govore da postoje faktori koji bolje objašnjavaju varijancu podataka.
+Vidimo da je veza između `Hours per day` i `Age` statistički značajna no R\^2 vrijednost je vrlo niska. Reziduali ne podliježu normalnoj razdiobi što dodatno znači da to nije značajna varijabla za model. Iako je statistički značajna veza, rezultati nam govore da postoje faktori koji bolje objašnjavaju varijancu podataka.
 
-
-Probajmo sada napraviti višestruku regresiju koja uključuje sve varijable koje smo izvdojili.
-
+Probajmo sada napraviti višestruku regresiju koja uključuje sve varijable koje smo prije izvdojili.
 
 ```{r choose_data}
 chosen_data <- music_data %>%
@@ -505,10 +513,9 @@ chosen_data <- music_data %>%
    `Primary streaming service` = convert_primary_streaming_service(`Primary streaming service`)
  )
 
-
 ```
 
-```{r}
+```{r multiple_variable_regression}
 
 results <- multiple_var_analysis(chosen_data)
 
@@ -516,4 +523,49 @@ print(results$top_10_plot)
 print(results$prediction_plot)
 
 print(summary(results$model))
+
+qqnorm(results$model$residuals)
+qqline(results$model$residuals, col = "red", lwd = 2)
 ```
+
+Prema rezultatima višestruke regresije koristeći varijable koje smo prije izdvojili, vidimo da model nije savršeno objašnjen tim odabirom varijabli. R\^2 vrijednost je niska iako model bolje objašnjava dob ispitanika nego pojedinačne varijable. Prema qqplotu, reziduali većinom podliježu normalnoj razdiobi što znači da je model ima neku prediktivnu moć.
+
+Probajmo poboljšati model odabirom drugih varijabli, ostavljajući varijable koje najbolje objašnjavaju dob ispitanika u prošloj regresiji: `Instrumentalist`, `Primary Streaming Service`, `Frequency [Pop]`, `Frequency [Folk]`, `Hours per day` i `OCD`.
+
+Dodati ćemo slijedeće varijable koje bi mogle bolje objasniti dob ispitanika: `Exploratory`, `Frequency [Classical]`, `Depression`, `Frequency [R&B]` i `Frequency [Video game music]`.
+
+```{r choose_data2}
+chosen_data2 <- music_data %>%
+  select(`Age`, `Primary streaming service`, Instrumentalist, `Frequency [Folk]`, `Frequency [Pop]`,`Hours per day`, `Frequency [Classical]`, `Frequency [R&B]`, `Frequency [Video game music]`, `Exploratory`, `Composer`, `OCD`) %>%
+  mutate(
+    across(starts_with("Frequency"), convert_frequency),
+    across(c(Instrumentalist, `Exploratory`, `Composer`), convert_binary),
+   `Primary streaming service` = convert_primary_streaming_service(`Primary streaming service`)
+ )
+
+```
+
+```{r multiple_variable_regression2}
+results2 <- multiple_var_analysis(chosen_data2)
+
+print(results2$top_10_plot)
+print(results2$prediction_plot)
+
+print(summary(results2$model))
+
+qqnorm(results2$model$residuals)
+qqline(results2$model$residuals, col = "red", lwd = 2)
+```
+
+Vidimo da je $R^2$ vrijednost povećana, a reziduali su bliži normalnoj razdiobi. Dodavanjem novih varijabli, prediktivna moć modela je poboljšana, ali je model ipak značajno kompliciraniji. Ukoliko bi nastavili i koristili SVE varijable, model bi bio imao najveću prediktivnu moć koju može postići, ali bi bio i najkompleksniji. Naime tim pristupom riskiramo da uzmemo varijable koje su međusobno previše korelirane i time bi narušile interpretaciju modela. U našem slučaju varijable koje smo odabrali nisu značajno korelirane što se može provjeriti korelacijskom matricom na početku ovog zadatka.
+
+**Zaključak:** Predviđanje dobi putem slušanja glazbe je moguće, ali s ograničenom preciznošću ($R^2$ = 0.24).
+
+Najznačajniji prediktori u višestrukoj regresiji su slijedeći:
+
+-   Primary streaming servis (+1.79 godina)
+-   Frekvencija slušanja popa (-2.28 godina)
+-   Status instrumentalista (-2.57 godina)
+-   Frekvencija slušanja folka (+ 2.05 godina)
+
+Model objašnjava oko 20% varijance u dobi, što ukazuje da glazbene preferencije mogu djelomično, ali ne potpuno, predvidjeti dob slušatelja.

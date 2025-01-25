@@ -18,18 +18,19 @@ multiple_var_analysis <- function(chosen_data) {
   # Importance plot
   top_10_plot <- ggplot(importance %>% head(10), 
                         aes(x = reorder(Feature, Importance), y = Importance)) +
-    geom_bar(stat = "identity") +
+    geom_bar(stat = "identity", fill="skyblue") +
     coord_flip() +
-    theme_minimal() +
-    labs(title = "Top 10 Faktora za Predviđanje dobi",
+    theme_classic() +
+    labs(title = "Najvažniji Faktori za Predviđanje dobi",
          x = "Faktori",
          y = "Važnost")
+    
   
   prediction_plot <- ggplot(data.frame(Actual = chosen_data$Age, 
                                        Predicted = predictions), 
                             aes(x = Actual, y = Predicted)) +
     geom_point(alpha = 0.5) +
-    geom_abline(intercept = 0, slope = 1, color = "red") +
+    geom_abline(intercept = 0, slope = 1, color = "red", linewidth = 1.5) +
     theme_minimal() +
     labs(title = "Actual vs Predicted Values",
          x = "Actual Age",
