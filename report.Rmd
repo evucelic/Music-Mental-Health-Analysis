@@ -33,12 +33,11 @@ library(caret)
 ```{r source-scripts}
 source("R/barplots.R")
 source("R/normality_tests.R")
+source("R/multiple_var_regression.R")
 ```
 
 ```{r load-data}
 music_data <- read_csv("data/processed/dataset_reduced.csv", show_col_types = FALSE)
-colnames(music_data) <- gsub("\\[|\\]", "_", colnames(music_data))
-print(colnames(music_data))
 
 # omit na values
 music_data <- na.omit(music_data)
@@ -252,7 +251,7 @@ Na kraju ćemo posebno analizirati povezanost između učestalosti slušanja met
 
 ```{r}
 # Odabiremo samo potrebne varijable
-columns_of_interest <- c("Frequency _Classical_", "Frequency _Country_", "Frequency _EDM_", "Frequency _Folk_", "Frequency _Gospel_", "Frequency _Hip hop_", "Frequency _Jazz_", "Frequency _K pop_", "Frequency _Latin_", "Frequency _Lofi_", "Frequency _Metal_", "Frequency _Pop_", "Frequency _R&B_", "Frequency _Rap_", "Frequency _Rock_", "Frequency _Video game music_", "Anxiety", "Depression", "Insomnia", "OCD")
+columns_of_interest <- c("Frequency [Classical]", "Frequency [Country]", "Frequency [EDM]", "Frequency [Folk]", "Frequency [Gospel]", "Frequency [Hip hop]", "Frequency [Jazz]", "Frequency [K pop]", "Frequency [Latin]", "Frequency [Lofi]", "Frequency [Metal]", "Frequency [Pop]", "Frequency [R&B]", "Frequency [Rap]", "Frequency [Rock]", "Frequency [Video game music]", "Anxiety", "Depression", "Insomnia", "OCD")
 data_subset <- music_data[, columns_of_interest]
 
 # Mapiranje, pretvorba kategorijskih frekvencija u numeričke
@@ -269,7 +268,6 @@ convert_frequency <- function(frequency) {
 data_subset <- data_subset %>%
   mutate(across(starts_with("Frequency"), convert_frequency))
 
-str(data_subset)
 
 # Izračun korelacija - Spearman
 correlation_matrix <- cor(data_subset, method = "spearman", use = "pairwise.complete.obs")
@@ -278,11 +276,11 @@ correlation_matrix <- cor(data_subset, method = "spearman", use = "pairwise.comp
 corrplot(correlation_matrix, method = "color", type = "lower", tl.col = "black",
          tl.cex = 0.7, col = colorRampPalette(c("blue", "white", "red"))(200))
 
-metal_depression_test <- cor.test(data_subset$`Frequency _Metal_`, data_subset$Depression, method = "spearman")
+metal_depression_test <- cor.test(data_subset$`Frequency [Metal]`, data_subset$Depression, method = "spearman")
 print(metal_depression_test)
 ```
 
-**Zaključak:** Rezultati Spearmanove korelacije pokazuju slab pozitivni odnos (rho = 0.1887) između učestalosti slušanja metal glazbe i samoprocijenjene razine depresije. To znači da je moguće da ispitanici koji češće slušaju metal glazbu imaju nešto višu razinu depresije. P-vrijednost iznosi 2.509e-07, što ukazuje na to da je korelacija statistički značajna. Ovaj rezultat sugerira da je odnos između slušanja metal glazbe i depresije vjerojatno stvaran i nije posljedica slučajnosti.
+**Zaključak:** Rezultati Spearmanove korelacije pokazuju slab pozitivni odnos (rho = 0.18) između učestalosti slušanja metal glazbe i samoprocijenjene razine depresije. To znači da je moguće da ispitanici koji češće slušaju metal glazbu imaju nešto višu razinu depresije. P-vrijednost iznosi 2.509e-07, što ukazuje na to da je korelacija statistički značajna. Ovaj rezultat sugerira da je odnos između slušanja metal glazbe i depresije vjerojatno stvaran i nije posljedica slučajnosti.
 
 ## 3. Postoji li povezanost između korištenog servisa i sklonosti istraživanju
 
@@ -383,64 +381,99 @@ Pretpostavke modela: - Linearnost: odnos između nezavisnih i zavisne varijable 
 
 Napraviti ćemo korelacijske tablice da vidimo koje varijable bi mogle biti značajne za predviđanje dobi ispitanika. Nakon toga, provest ćemo linearnu regresiju.
 
-```{r correlation_matrix}
+```{r correlation_matrix_numerical}
 numericvars <- music_data %>%
   select(Age, `Hours per day`, `Depression`, `OCD`, `Anxiety`)
 correlation_matrix <- cor(numericvars, method = "spearman", use = "pairwise.complete.obs")
 
+correlations_with_age <- abs(correlation_matrix["Age", ])
+sort(correlations_with_age, decreasing = TRUE)
+
 corrplot(correlation_matrix, method = "color", type = "lower", tl.col = "black",
          tl.cex = 0.7, col = colorRampPalette(c("blue", "white", "red"))(200))
 
 ```
 
-```{r categorical_correlation_matrix}
-# Create all dummy variables first
-variables <- music_data %>%
-  select(Age, `Primary streaming service`, `Exploratory`, `While working`, `Composer`)
+```{r conversion_functions}
+convert_frequency <- function(x) {
+  freq_levels <- c("Never" = 0, "Rarely" = 1, "Sometimes" = 2, "Very frequently" = 3)
+  as.numeric(factor(x, levels = names(freq_levels))) - 1
+}
 
-dummyvars <- dummy_cols(variables, remove_selected_columns = TRUE) %>%
-  select(Age,
-         contains("_Youtube Music"),
-         contains("_Spotify"),
-         contains("_Apple"),
-         contains("_None"),
-         contains("Exploratory_"),
-         contains("While working_"),
-         contains("Composer_"))
+convert_binary <- function(x) {
+  as.numeric(factor(x, levels = c("No", "Yes")))
+}
 
-# Calculate and visualize correlation matrix
-correlation_matrix <- cor(dummyvars, method = "spearman", use = "pairwise.complete.obs")
-corrplot(correlation_matrix, method = "color", type = "lower", tl.col = "black",
-         tl.cex = 0.7, col = colorRampPalette(c("blue", "white", "red"))(200))
+convert_music_effects <- function(x) {
+  as.numeric(factor(x, levels = c("Worsen","No effect", "Improve"))) - 2
+}
+
+convert_primary_streaming_service <- function(x) {
+  as.numeric(factor(x, levels = c("Spotify", "Apple Music", "Youtube Music", "Pandora", "Other")))
+}
+
+convert_genre <- function(x) {
+  as.numeric(factor(x, levels = c("Pop", "Rock", "Rap", "Hip hop", "Country", "Jazz", "Metal", "EDM", "R&B", "K pop", "Video game music", "Classical", "Folk", "Latin", "Lofi", "Gospel", "Other")))
+}
 ```
 
-Prema korelacijskim tablicama odlučili smo uzeti varijable `Primary streaming service`, `Hours per day`, `Exploratory`, `Depression`, `While working`, `Composer`.
+```{r correlation_matrix_categorical}
+corr_data <- music_data %>%
+  select(`Age`, `Primary streaming service`, `While working`, Instrumentalist, 
+        Composer, `Fav genre`, Exploratory, `Foreign languages`, `Music effects`, starts_with("Frequency")) %>%
+  mutate(
+    across(starts_with("Frequency"), convert_frequency),
+    across(c(`While working`, Instrumentalist, Composer, Exploratory, `Foreign languages`), convert_binary),
+   `Primary streaming service` = convert_primary_streaming_service(`Primary streaming service`),
+   `Fav genre` = convert_genre(`Fav genre`),
+   `Music effects` = convert_music_effects(`Music effects`)
+ )
+
+correlation_matrix <- cor(corr_data, method = "spearman", use = "pairwise.complete.obs")
+corrplot(correlation_matrix, method = "color", type = "lower", 
+        tl.col = "black", tl.cex = 0.7,
+        col = colorRampPalette(c("blue", "white", "red"))(200))
+
+age_correlations_df <- data.frame(
+  Variable = names(age_correlations),
+  Correlation = as.numeric(age_correlations)
+)
+print(age_correlations_df)
+```
+
+Prema korelacijskim tablicama uzeti ćemo varijable koje imaju najveću apsolutnu vrijednost korelacije s varijablom `Age` za linearnu regresiju. Među numeričkim varijablama to su `Hours per day` i `OCD` dok su kod kategoričkih varijabli to frekvencije slušanja glazbe. Od kategoričkih izdvojiti ćemo slijedeće: `Frequency [Folk]`, `Frequency[Pop]`,`Frequency [Country]`, `Instrumentalist`, `While Working` i `Primary streaming service`.
+
+Provedimo prvo par jednostavnih linearnih regresija za varijable `OCD` i `Hours per day` kako bismo vidjeli jesu li te varijable značajne za model.
 
 ```{r linear_regression_depression}
-model <- lm(Age ~ Depression, data = music_data)
+model <- lm(Age ~ OCD, data = music_data)
 
 summary(model)
 
-par(mfrow=c(2,2))
-plot(model)
 
 ggplot(music_data, aes(x = Depression, y = Age)) +
   geom_point() +
   geom_smooth(method = "lm") +
   theme_minimal() +
-  labs(title = "Age vs Depression",
-       x = "Depression Score",
+  labs(title = "Age vs OCD",
+       x = "OCD Score",
        y = "Age")
 
+
+qqnorm(model$residuals)
+qqline(model$residuals, col = "steelblue", lwd = 2)
+
+lillie.test(model$residuals)
+
 ```
+
+Vidimo da je OCD statistički značajan no slabo objašnjava dob ispitanika (niski R^2). Također, reziduali ne podliježu normalnoj razdiobi što znači da to nije značajna varijabla za model. Sada ćemo provesti linearnu regresiju za varijablu `Hours per day`.
+
 
 ```{r linear_regression_hours_per_day}
 model <- lm(Age ~ `Hours per day`, data = music_data)
 
 summary(model)
-
-par(mfrow=c(2,2))
-plot(model)
 
 ggplot(music_data, aes(x = `Hours per day`, y = Age)) +
   geom_point() +
@@ -450,130 +483,37 @@ ggplot(music_data, aes(x = `Hours per day`, y = Age)) +
        x = "Hours per day",
        y = "Age")
 
+qqnorm(model$residuals)
+qqline(model$residuals, col = "steelblue", lwd = 2)
+
+lillie.test(model$residuals)
+
+```
+
+Vidimo da je veza između `Hours per day` i `Age` statistički značajna no R^2 vrijednost je vrlo niska. Reziduali ne podliježu normalnoj razdiobi što dodatno znači da to nije značajna varijabla za model. Iako je statistički značajna veza, rezultati nam govore da postoje faktori koji bolje objašnjavaju varijancu podataka.
+
+
+Probajmo sada napraviti višestruku regresiju koja uključuje sve varijable koje smo izvdojili.
+
+
+```{r choose_data}
+chosen_data <- music_data %>%
+  select(`Age`, `Hours per day`, `OCD`, `Primary streaming service`, `While working`, Instrumentalist, `Frequency [Folk]`, `Frequency [Pop]`,`Frequency [Country]`) %>%
+  mutate(
+    across(starts_with("Frequency"), convert_frequency),
+    across(c(`While working`, Instrumentalist), convert_binary),
+   `Primary streaming service` = convert_primary_streaming_service(`Primary streaming service`)
+ )
+
+
 ```
 
 ```{r}
 
-# Funkcija za konverziju frequency varijabli u numeričke
-convert_frequency <- function(x) {
-  freq_levels <- c("Never" = 0, "Rarely" = 1, "Sometimes" = 2, "Very frequently" = 3)
-  as.numeric(factor(x, levels = names(freq_levels))) - 1
-}
+results <- multiple_var_analysis(chosen_data)
 
-# Funkcija za pripremu podataka
-prepare_data <- function(df) {
-  # Kopiranje dataframe-a
-  df_prep <- df %>%
-    select(-c(`Music effects`)) %>%
-    # Pretvaranje kategoričkih varijabli u faktore
-    mutate(
-      `Primary streaming service` = as.factor(`Primary streaming service`),
-      `While working` = as.factor(`While working`),
-      Instrumentalist = as.factor(Instrumentalist),
-      Composer = as.factor(Composer),
-      `Fav genre` = as.factor(`Fav genre`),
-      Exploratory = as.factor(Exploratory),
-      `Foreign languages` = as.factor(`Foreign languages`)
-    )
-  
-  # Konverzija frequency varijabli
-  frequency_cols <- grep("Frequency", names(df_prep), value = TRUE)
-  for(col in frequency_cols) {
-    df_prep[[col]] <- convert_frequency(df_prep[[col]])
-  }
-  
-  # Kreiranje dummy varijabli za kategoričke varijable
-  categorical_cols <- c("Primary streaming service", "While working", 
-                       "Instrumentalist", "Composer", "Fav genre", 
-                       "Exploratory", "Foreign languages")
-  
-  dummy_data <- dummyVars("~ .", data = df_prep[categorical_cols])
-  dummy_matrix <- predict(dummy_data, df_prep[categorical_cols])
-  
-  # Priprema numeričkih varijabli
-  numeric_data <- df_prep %>%
-    select(Age, `Hours per day`, BPM, all_of(frequency_cols), Depression)
-  
-  # Standardizacija numeričkih varijabli (osim Age)
-  numeric_scaled <- numeric_data %>%
-    select(-Age) %>%
-    scale() %>%
-    as.data.frame()
-  
-  # Spajanje svih podataka
-  final_data <- cbind(
-    Age = numeric_data$Age,
-    numeric_scaled,
-    dummy_matrix
-  )
-  
-  return(final_data)
-}
-
-# Funkcija za analizu
-analyze_age_prediction <- function(df) {
-  # Priprema podataka
-  data_final <- prepare_data(df)
-  
-  model <- lm(Age ~ ., data = data_final)
-  
-  # Predikcije na istim podacima (za vizualizaciju)
-  predictions <- predict(model, newdata = data_final)
-  
-  # Analiza važnosti varijabli
-  importance <- data.frame(
-    Feature = names(coef(model))[-1],
-    Importance = abs(coef(model)[-1])
-  ) %>%
-    arrange(desc(Importance))
-  
-  # R-squared
-  r2 <- summary(model)$r.squared
-  
-  # Vizualizacija najvažnijih faktora
-  top_10_plot <- ggplot(importance %>% head(10), 
-                        aes(x = reorder(Feature, Importance), y = Importance)) +
-    geom_bar(stat = "identity") +
-    coord_flip() +
-    theme_minimal() +
-    labs(title = "Top 10 najvažnijih faktora za predikciju dobi",
-         x = "Faktori",
-         y = "Važnost")
-  
-  # Vizualizacija stvarnih vs. predviđenih vrijednosti
-  prediction_plot <- ggplot(data.frame(Actual = data_final$Age, 
-                                     Predicted = predictions), 
-                           aes(x = Actual, y = Predicted)) +
-    geom_point(alpha = 0.5) +
-    geom_abline(intercept = 0, slope = 1, color = "red") +
-    theme_minimal() +
-    labs(title = "Stvarne vs. Predviđene vrijednosti",
-         x = "Stvarna dob",
-         y = "Predviđena dob")
-  
-  return(list(
-    model = model,
-    r2 = r2,
-    importance = importance,
-    top_10_plot = top_10_plot,
-    prediction_plot = prediction_plot
-  ))
-}
-
-# Pokretanje analize
-results <- analyze_age_prediction(music_data)
-
-# Ispis rezultata
-print(paste("R2:", round(results$r2, 3)))
-
-# Prikaz vizualizacija
 print(results$top_10_plot)
 print(results$prediction_plot)
 
-# Pregled najvažnijih faktora
-print("Najvažniji faktori:")
-print(head(results$importance, 10))
-
-# Detaljan summary modela
 print(summary(results$model))
 ```
