@@ -8,7 +8,7 @@ renv/local/
 renv/cellar/
 renv/lock/
 *.Rproj
-*.pdf
 *.html
 *.docx
 .DS_Store
+renv/

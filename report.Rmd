@@ -3,6 +3,7 @@ title: "Analiza glazbenih preferencija i njihovog utjecaja na mentalno zdravlje"
 author: "Ena Dvojak, Patrik Blašković, Mislav Hlupić, Eugen Vucelić"
 date: "`r Sys.Date()`"
 output: pdf_document
+mainfont: Palatino
 ---
 
 ```{r setup, include=FALSE}
@@ -77,7 +78,7 @@ music_data <- music_data %>%
 
 ### Mjere rasipanja
 
-Mjere rasipanja za varijable `Age`i `Hours per day` grupirane po primarnom streaming servisu. Pomoću standardne devijacije i ranga donosimo zaključke da **Spotify** ima najveći rang godina (ima i najviše korisnika među ispitanicima općenito), dok **Pandora** ima najveću standardnu devijaciju godina među svojim korisnicima (čemu pridonosi činjenica da je Pandora najmanje zastupljena među ispitanicima).
+Mjere rasipanja za varijable `Age` i `Hours per day` grupirane po primarnom streaming servisu. Pomoću standardne devijacije i ranga donosimo zaključke da **Spotify** ima najveći rang godina (ima i najviše korisnika među ispitanicima općenito), dok **Pandora** ima najveću standardnu devijaciju godina među svojim korisnicima (čemu pridonosi činjenica da je Pandora najmanje zastupljena među ispitanicima).
 
 ```{r dispersion}
 music_data %>%
@@ -134,7 +135,7 @@ print(plot)
 
 ### Histogrami i provjere normalnosti
 
-Za provjeru normalnosti distribucije numeričkih varijabli koristimo vizualne i statističke metode. Vizualno ćemo distribucije prikazati histogramima, dok ćemo statistički normalnost testirati **Lillieforsovom inačicom Kolmogorov-Smirnov testa**. Ovaj test je modifikacija standardnog Kolmogorov-Smirnov testa gdje se parametri normalne distribucije (srednja vrijednost i standardna devijacija) procjenjuju iz uzorka. Nulta hipoteza testa je da podaci dolaze iz normalne distribucije, a test provodimo na razini značajnosti α = 0.05. Provjeru provodimo za numeričke varijable: Hours per day te samoprocjenjene skale Anxiety, Depression, Insomnia, OCD.
+Za provjeru normalnosti distribucije numeričkih varijabli koristimo vizualne i statističke metode. Vizualno ćemo distribucije prikazati histogramima, dok ćemo statistički normalnost testirati **Lillieforsovom inačicom Kolmogorov-Smirnov testa**. Ovaj test je modifikacija standardnog Kolmogorov-Smirnov testa gdje se parametri normalne distribucije (srednja vrijednost i standardna devijacija) procjenjuju iz uzorka. Nulta hipoteza testa je da podaci dolaze iz normalne distribucije, a test provodimo na razini značajnosti $\alpha$ = 0.05. Provjeru provodimo za numeričke varijable: `Hours per day` te samoprocjenjene skale `Anxiety`, `Depression`, `Insomnia`, `OCD`.
 
 ```{r histogram_hours_per_day}
 mean_hours <- mean(music_data$`Hours per day`, na.rm = TRUE)
@@ -162,7 +163,7 @@ music_data %>%
   theme_minimal()
 ```
 
-Iz tablice ispod svih histograma, vidimo da i dalje nisu normalno distribuirani. Osim i pomoću histograma i testa, možemo to vidjeti i qqplot-om koji ćemo provesti samo za varijablu "Hours per day" radi preglednosti.
+Iz tablice ispod svih histograma, vidimo da i dalje nisu normalno distribuirani. Osim i pomoću histograma i testa, možemo to vidjeti i qqplot-om koji ćemo provesti samo za varijablu `Hours per day` radi preglednosti.
 
 ```{r qqplot_hours_per_day}
 qqnorm(music_data$`Hours per day`)
@@ -215,7 +216,7 @@ music_data %>%
 analyze_normality(music_data)
 ```
 
-**Zaključak:** Na razini značajnosti α = 0.05, odbacujemo nultu hipotezu za sve numeričke varijable jer p-vrijednosti testa su manje od 0.05. To znači da podaci **ne dolaze iz normalne distribucije**.
+**Zaključak:** Na razini značajnosti $\alpha$ = 0.05, odbacujemo nultu hipotezu za sve numeričke varijable jer p-vrijednosti testa su manje od 0.05. To znači da podaci **ne dolaze iz normalne distribucije**.
 
 ## 1. Slušaju li skladatelji više glazbe dnevno od drugih?
 
@@ -235,7 +236,7 @@ music_data %>%
 
 ```
 
-Iz boxplota možemo zaključiti da skladatelji u prosjeku slušaju više glazbe dnevno od ostalih ispitanika. S obzirom na to da podaci nisu normalno distribuirani, provjerimo ovu tvrdnju neparametarskim Wilcoxonovim rank-sum testom. **Wilcoxonov rank-sum test** koristi se za uspoređivanje dva nezavisna uzorka. Nulta hipoteza testa je da nema razlike u satima slušanja dnevno između skladatelja i ostalih ispitanika, a test provodimo na razini značajnosti α = 0.05.
+Iz boxplota možemo zaključiti da skladatelji u prosjeku slušaju više glazbe dnevno od ostalih ispitanika. S obzirom na to da podaci nisu normalno distribuirani, provjerimo ovu tvrdnju neparametarskim Wilcoxonovim rank-sum testom. **Wilcoxonov rank-sum test** koristi se za uspoređivanje dva nezavisna uzorka. Nulta hipoteza testa je da nema razlike u satima slušanja dnevno između skladatelja i ostalih ispitanika, a test provodimo na razini značajnosti $\alpha$ = 0.05.
 
 ```{r wilcox}
 composers <- music_data %>%
@@ -247,7 +248,7 @@ non_composers <- music_data %>%
 wilcox.test(composers$`Hours per day`, non_composers$`Hours per day`, alternative = "greater")
 ```
 
-**Zaključak:** Prema rezultatima Wilcoxonovog rank-sum testa, odbacujemo nultu hipotezu na razini značajnosti α = 0.05 u korist alternativne hipoteze. To znači da **skladatelji u prosjeku slušaju više glazbe dnevno od ostalih ispitanika**.
+**Zaključak:** Prema rezultatima Wilcoxonovog rank-sum testa, odbacujemo nultu hipotezu na razini značajnosti $\alpha$ = 0.05 u korist alternativne hipoteze. To znači da **skladatelji u prosjeku slušaju više glazbe dnevno od ostalih ispitanika**.
 
 ## 2. Korelacije izmedu frekvencija slušanja različitih glazbenih žanrova i samoprocijenjenih razina mentalnih poremećaja
 
@@ -286,11 +287,11 @@ metal_depression_test <- cor.test(data_subset$`Frequency [Metal]`, data_subset$D
 print(metal_depression_test)
 ```
 
-**Zaključak:** Rezultati Spearmanove korelacije pokazuju slab pozitivni odnos (rho = 0.18) između učestalosti slušanja metal glazbe i samoprocijenjene razine depresije. To znači da je moguće da ispitanici koji češće slušaju metal glazbu imaju nešto višu razinu depresije. P-vrijednost iznosi 2.509e-07, što ukazuje na to da je korelacija statistički značajna. Ovaj rezultat sugerira da je **odnos između slušanja metal glazbe i depresije vjerojatno stvaran** i nije posljedica slučajnosti.
+**Zaključak:** Rezultati Spearmanove korelacije pokazuju slab pozitivni odnos (rho = 0.18) između učestalosti slušanja metal glazbe i samoprocijenjene razine depresije. To znači da je moguće da ispitanici koji češće slušaju metal glazbu imaju nešto višu razinu depresije. P-vrijednost iznosi 6.909e-06, što ukazuje na to da je korelacija statistički značajna. Ovaj rezultat sugerira da je **odnos između slušanja metal glazbe i depresije vjerojatno stvaran** i nije posljedica slučajnosti.
 
 ## 3. Postoji li povezanost između korištenog servisa i sklonosti istraživanju
 
-Kako bismo provjerili ovu tvrdnju provodimo **test nezavisnosti** $\chi^2$. Nulta hipoteza testa je da nema povezanosti između primarnog streaming servisa i sklonosti istraživanju, a test provodimo na razini značajnosti α = 0.05. Umjesto da izbacujemo streaming servis `Pandora`, grupirali smo ga zajedno s `Other` stavkom kako bismo zadovoljili pretpostavku testa da su frekvencije podataka ≥ 5. Također, izbacili smo "None" jer su to ispitanici koji ne koriste streaming servise.
+Kako bismo provjerili ovu tvrdnju provodimo **test nezavisnosti** $\chi^2$. Nulta hipoteza testa je da nema povezanosti između primarnog streaming servisa i sklonosti istraživanju, a test provodimo na razini značajnosti $\alpha$ = 0.05. Umjesto da izbacujemo streaming servis `Pandora`, grupirali smo ga zajedno s `Other` stavkom kako bismo zadovoljili pretpostavku testa da su frekvencije podataka $\geq$ 5. Također, izbacili smo `None` jer su to ispitanici koji ne koriste streaming servise.
 
 ```{r contingency_table}
 music_data %>%
@@ -325,7 +326,7 @@ music_data %>%
 
 ## 4. Razlikuje li se prosječni broj sati slušanja glazbe značajno među korisnicima ovisno o njihovim omiljenim žanrovima?
 
-ANOVA (engl. *ANalysis Of VAriance*) je metoda kojom testiramo sredine više populacija. U ovom slučaju, testiramo razlike u prosječnom broju sati slušanja glazbe dnevno među korisnicima ovisno o njihovim omiljenim žanrovima. Nulta hipoteza testa je da nema razlike u prosječnom broju sati slušanja dnevno među korisnicima omiljenih žanrova, a test provodimo na razini značajnosti α = 0.05. Radi distribucije podataka, koristimo **Kruskal-Wallisov test** koji je neparametarska verzija ANOVA-e.
+ANOVA (engl. *ANalysis Of VAriance*) je metoda kojom testiramo sredine više populacija. U ovom slučaju, testiramo razlike u prosječnom broju sati slušanja glazbe dnevno među korisnicima ovisno o njihovim omiljenim žanrovima. Nulta hipoteza testa je da nema razlike u prosječnom broju sati slušanja dnevno među korisnicima omiljenih žanrova, a test provodimo na razini značajnosti $\alpha$ = 0.05. Radi distribucije podataka, koristimo **Kruskal-Wallisov test** koji je neparametarska verzija ANOVA-e.
 
 Za početak, prebrojavamo koliko ispitanika preferira svaki žanr.
 
@@ -361,7 +362,7 @@ music_data %>%
 
 ```
 
-Provodimo **test homogenosti varijanci** kako bismo provjerili pretpostavku o jednakim varijancama među skupinama. Nulta hipoteza testa je da su varijance jednake, a test provodimo na razini značajnosti α = 0.05.
+Provodimo **test homogenosti varijanci** kako bismo provjerili pretpostavku o jednakim varijancama među skupinama. Nulta hipoteza testa je da su varijance jednake, a test provodimo na razini značajnosti $\alpha$ = 0.05.
 
 ```{r levene_test}
 music_data$`Fav genre` <- as.factor(music_data$`Fav genre`)
@@ -391,7 +392,7 @@ U ovom zadatku koristiti ćemo linearnu regresiju kako bismo pokušali predvidje
 *Linearnost*
 
 -   Veza između nezavisnih i zavisne varijable mora biti linearna
--   Može se prikazati jednadžbom: y = β₀ + β₁x₁ + ... + βₙxₙ + ε
+-   Može se prikazati jednadžbom: $y = \beta_0 + \beta_1x_1 + ... + \beta_nx_n + \varepsilon$
 
 *Normalnost reziduala*
 
@@ -493,7 +494,7 @@ lillie.test(model$residuals)
 
 ```
 
-Vidimo da je OCD statistički značajan no slabo objašnjava dob ispitanika (niski R\^2). Također, reziduali ne podliježu normalnoj razdiobi što znači da to nije značajna varijabla za model. Sada ćemo provesti linearnu regresiju za varijablu `Hours per day`.
+Vidimo da je OCD statistički značajan no slabo objašnjava dob ispitanika (niski $R^2$). Također, reziduali ne podliježu normalnoj razdiobi što znači da to nije značajna varijabla za model. Sada ćemo provesti linearnu regresiju za varijablu `Hours per day`.
 
 ```{r linear_regression_hours_per_day}
 model <- lm(Age ~ `Hours per day`, data = music_data)
@@ -516,7 +517,7 @@ lillie.test(model$residuals)
 
 ```
 
-Vidimo da je veza između `Hours per day` i `Age` statistički značajna no R\^2 vrijednost je vrlo niska. Reziduali ne podliježu normalnoj razdiobi što dodatno znači da to nije značajna varijabla za model. Iako je statistički značajna veza, rezultati nam govore da postoje faktori koji bolje objašnjavaju varijancu podataka.
+Vidimo da je veza između `Hours per day` i `Age` statistički značajna no $R^2$ vrijednost je vrlo niska. Reziduali ne podliježu normalnoj razdiobi što dodatno znači da to nije značajna varijabla za model. Iako je statistički značajna veza, rezultati nam govore da postoje faktori koji bolje objašnjavaju varijancu podataka.
 
 Probajmo sada napraviti višestruku regresiju koja uključuje sve varijable koje smo prije izvdojili.
 
