@@ -27,7 +27,6 @@ library(nortest)
 library(ggplot2)
 library(corrplot)
 library(car)
-library(fastDummies)
 library(caret)
 ```
 
@@ -39,9 +38,6 @@ source("R/multiple_var_regression.R")
 
 ```{r load-data}
 music_data <- read_csv("data/processed/dataset_reduced.csv", show_col_types = FALSE)
-
-# omit na values
-music_data <- na.omit(music_data)
 
 head(music_data)
 ```
@@ -287,7 +283,7 @@ metal_depression_test <- cor.test(data_subset$`Frequency [Metal]`, data_subset$D
 print(metal_depression_test)
 ```
 
-**Zaključak:** Rezultati Spearmanove korelacije pokazuju slab pozitivni odnos (rho = 0.18) između učestalosti slušanja metal glazbe i samoprocijenjene razine depresije. To znači da je moguće da ispitanici koji češće slušaju metal glazbu imaju nešto višu razinu depresije. P-vrijednost iznosi 6.909e-06, što ukazuje na to da je korelacija statistički značajna. Ovaj rezultat sugerira da je **odnos između slušanja metal glazbe i depresije vjerojatno stvaran** i nije posljedica slučajnosti.
+**Zaključak:** Rezultati Spearmanove korelacije pokazuju slab pozitivni odnos (rho = 0.18) između učestalosti slušanja metal glazbe i samoprocijenjene razine depresije. To znači da je moguće da ispitanici koji češće slušaju metal glazbu imaju nešto višu razinu depresije. P-vrijednost iznosi 9.631e-07, što ukazuje na to da je korelacija statistički značajna. Ovaj rezultat sugerira da je **odnos između slušanja metal glazbe i depresije vjerojatno stvaran** i nije posljedica slučajnosti.
 
 ## 3. Postoji li povezanost između korištenog servisa i sklonosti istraživanju
 
@@ -383,7 +379,7 @@ Na razini značajnosti 0.05, ne odbacujemo nultu hipotezu. To znači da su varij
 kruskal.test(`Hours per day` ~ `Fav genre`, data = music_data)
 ```
 
-**Zaključak:** Na razini značajnosti 0.05, ne odbacujemo nultu hipotezu u korist alternativne. To znači da **ne** **postoji značajna razlika** u prosječnom broju sati slušanja dnevno ovisno o omiljenim žanrovima korisnika.
+**Zaključak:** Na razini značajnosti 0.05, odbacujemo nultu hipotezu u korist alternativne. To znači da **postoji značajna razlika** u prosječnom broju sati slušanja dnevno ovisno o omiljenim žanrovima korisnika.
 
 ## 5. Može li se iz zadanih podataka predvidjeti dob ispitanika?
 
@@ -580,9 +576,9 @@ Vidimo da je $R^2$ vrijednost povećana, a reziduali su bliži normalnoj razdiob
 
 Najznačajniji prediktori u višestrukoj regresiji su slijedeći:
 
--   Primary streaming servis (+1.79 godina)
--   Frekvencija slušanja popa (-2.28 godina)
--   Status instrumentalista (-2.57 godina)
--   Frekvencija slušanja folka (+ 2.05 godina)
+-   Primary streaming servis (+2.04 godina)
+-   Frekvencija slušanja popa (-2.44 godina)
+-   Status instrumentalista (-3.78 godina)
+-   Frekvencija slušanja folka (+ 1.69 godina)
 
-Model objašnjava oko 20% varijance u dobi, što ukazuje da glazbene preferencije mogu djelomično, ali ne potpuno, predvidjeti dob slušatelja.
+Model objašnjava oko 24% varijance u dobi, što ukazuje da glazbene preferencije mogu djelomično, ali ne potpuno, predvidjeti dob slušatelja.
